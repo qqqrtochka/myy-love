@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♥</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@400;500&display=swap');
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box }
+
+body {
+  width:100%;
+  height:100vh;
+  height:100dvh; /* iOS Safari: dynamic viewport excludes browser chrome */
+  overflow:hidden;
+  overscroll-behavior:none; /* prevent iOS elastic bounce */
+  background:#f5eaf0;
+  display:flex; align-items:center; justify-content:center;
+}
+body.dark { background:#0f0a18 }
+
+/* ── Gradient background ────────────────────────────────────────── */
+#bg {
+  position:fixed; inset:0; z-index:0;
+  background: linear-gradient(135deg, #ffd6e0 0%, #ffe5d9 50%, #ffd1b3 100%);
+  background-size:200% 200%;
+  animation: gradientBreath 14s ease-in-out infinite;
+  transition: opacity 2s ease;
+}
+body.dark #bg {
+  background: linear-gradient(135deg, #2d1240 0%, #1a0a30 50%, #2a0f3a 100%);
+  background-size:200% 200%;
+}
+#bg.fade-out { opacity:0 }
+
+/* ── Theme selection screen ─────────────────────────────────────── */
+#theme-screen {
+  position:fixed; inset:0; z-index:20;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap: clamp(28px, 5vh, 52px);
+  background: linear-gradient(160deg, #fff5f7 0%, #fff0ea 100%);
+  transition: opacity .7s ease, transform .7s ease;
+}
+#theme-screen.fade-out { opacity:0; transform:scale(1.04); pointer-events:none }
+
+.theme-title {
+  font-family:'Dancing Script', cursive;
+  font-size: clamp(1.8rem, 8vw, 2.8rem);
+  color:#c2185b;
+  text-shadow:0 2px 10px rgba(194,24,91,.15);
+  user-select:none;
+  opacity:0;
+  animation: fadeInUp 1s ease forwards .15s;
+}
+
+.theme-options {
+  display:flex; gap: clamp(14px, 4vw, 30px);
+  opacity:0;
+  animation: fadeInUp 1s ease forwards .4s;
+}
+
+.theme-card {
+  display:flex; flex-direction:column; align-items:center;
+  gap:13px;
+  background:none; border:2px solid transparent;
+  border-radius:20px; padding: clamp(10px, 2vw, 16px);
+  cursor:pointer; outline:none;
+  transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.theme-card:hover {
+  transform:scale(1.05);
+  border-color:rgba(194,24,91,.22);
+  box-shadow:0 8px 30px rgba(194,24,91,.13);
+}
+.theme-card.selected {
+  border-color:#e91e63;
+  box-shadow:0 6px 24px rgba(233,30,99,.22);
+}
+
+.theme-preview {
+  width: clamp(96px, 36vw, 148px);
+  height: clamp(124px, 46vw, 192px);
+  border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 18px rgba(0,0,0,.11);
+  overflow:hidden;
+}
+.preview-light {
+  background: linear-gradient(135deg, #ffd6e0 0%, #ffe5d9 50%, #ffd1b3 100%);
+}
+.preview-dark {
+  background: linear-gradient(135deg, #2d1240 0%, #1a0a30 50%, #2a0f3a 100%);
+}
+.theme-preview svg { filter:drop-shadow(0 3px 8px rgba(255,71,87,.55)) }
+
+.theme-label {
+  font-family:'Quicksand', sans-serif;
+  font-size: clamp(.85rem, 2.5vw, 1rem);
+  font-weight:500; color:#aaa; letter-spacing:1px;
+}
+
+/* ── Button screen ──────────────────────────────────────────────── */
+#btn-screen {
+  position:fixed; inset:0;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap: clamp(24px, 5vh, 40px);
+  opacity:0; pointer-events:none;
+  transition: opacity .9s ease, transform .9s ease;
+  z-index:10;
+}
+#btn-screen.visible    { opacity:1; pointer-events:auto }
+#btn-screen.fade-out   { opacity:0; transform:scale(0.92); pointer-events:none }
+
+/* ── Tagline ────────────────────────────────────────────────────── */
+.tagline {
+  font-family:'Dancing Script', cursive;
+  font-size: clamp(1.9rem, 6vw, 2.6rem);
+  color:#c2185b;
+  text-shadow:0 2px 8px rgba(194,24,91,.15);
+  user-select:none; pointer-events:none;
+}
+body.dark .tagline {
+  color:#ff9ab8;
+  text-shadow:0 2px 10px rgba(255,107,157,.28);
+}
+.tagline .hrt {
+  display:inline-block;
+  animation: emojiPulse 7s ease-in-out infinite;
+}
+
+/* ── Heart button ───────────────────────────────────────────────── */
+#heart-btn {
+  background:none; border:none; cursor:pointer; outline:none; padding:0;
+  width: clamp(68px, 14vw, 88px);
+  height:clamp(68px, 14vw, 88px);
+  filter:drop-shadow(0 4px 18px rgba(255,71,87,.45));
+  animation: btnPulse 4.5s ease-in-out infinite;
+  transition: transform .25s ease, filter .25s ease;
+  -webkit-tap-highlight-color:transparent;
+  -webkit-appearance:none; appearance:none;
+  touch-action:manipulation;
+}
+#heart-btn:hover {
+  transform:scale(1.1);
+  filter:drop-shadow(0 6px 28px rgba(255,71,87,.68));
+  animation-play-state:paused;
+}
+#heart-btn:active { transform:scale(0.93); animation-play-state:paused }
+#heart-btn svg { width:100%; height:100%; display:block }
+
+/* ── Heart screen ───────────────────────────────────────────────── */
+#heart-screen {
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  opacity:0; pointer-events:none; overflow:hidden;
+  transition:opacity .5s ease; z-index:5;
+}
+#heart-screen.visible { opacity:1 }
+
+#ghost-hearts { position:absolute; inset:0; pointer-events:none }
+
+.ghost-heart {
+  position:absolute;
+  pointer-events:none;
+  animation-name: ghostBreathe;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+#heart-container { position:relative; flex-shrink:0; z-index:1 }
+
+/* ── Words ──────────────────────────────────────────────────────── */
+.word {
+  position:absolute;
+  font-family:'Dancing Script', cursive; font-weight:700;
+  white-space:nowrap; pointer-events:none;
+  transform:translate(-50%,-50%) scale(0); opacity:0;
+}
+
+/* ── Particles ──────────────────────────────────────────────────── */
+#particles {
+  position:fixed; inset:0; pointer-events:none; z-index:1;
+  opacity:0; transition:opacity 1.5s ease;
+}
+#particles.visible { opacity:1 }
+
+/* ── Decor layer ────────────────────────────────────────────────── */
+#decor {
+  position:fixed; inset:0; z-index:2;
+  pointer-events:none; overflow:hidden;
+  transition: opacity 1.2s ease;
+}
+#decor.fade-out { opacity:0 }
+
+.bokeh {
+  position:absolute; border-radius:50%;
+  background: radial-gradient(circle, var(--bc) 0%, transparent 68%);
+  animation-name: bokehDrift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.fh {
+  position:absolute; bottom:-60px; opacity:0;
+  animation-name: floatUp;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.fh svg { display:block }
+
+/* ── Keyframes ──────────────────────────────────────────────────── */
+@keyframes gradientBreath {
+  0%   { background-position:  0% 50% }
+  50%  { background-position:100% 50% }
+  100% { background-position:  0% 50% }
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(14px) }
+  to   { opacity:1; transform:translateY(0)    }
+}
+@keyframes emojiPulse {
+  0%,100% { opacity:.3 }
+  50%     { opacity:1  }
+}
+@keyframes btnPulse {
+  0%,100% { transform:scale(1)    }
+  50%     { transform:scale(1.05) }
+}
+@keyframes breathe {
+  0%,100% { opacity:.28 }
+  50%     { opacity:1   }
+}
+@keyframes bokehDrift {
+  0%,100% { transform:translate(0,0);                     opacity:var(--b-op)            }
+  50%     { transform:translate(var(--b-dx),var(--b-dy)); opacity:calc(var(--b-op)*0.45) }
+}
+@keyframes ghostBreathe {
+  0%,100% { opacity:var(--go-min, .02) }
+  50%     { opacity:var(--go-max, .06) }
+}
+@keyframes floatUp {
+  0%   { transform:translateY(0)      translateX(0)              rotate(-8deg); opacity:0            }
+  8%   {                                                                         opacity:var(--fh-op) }
+  88%  {                                                                         opacity:var(--fh-op) }
+  100% { transform:translateY(-108vh) translateX(var(--fh-drift)) rotate(8deg); opacity:0            }
+}
+
+/* ── Mobile landscape: tighten vertical spacing ─────────────────── */
+@media (max-height: 500px) {
+  #theme-screen { gap:clamp(12px, 2vh, 20px) }
+  .theme-preview {
+    width: clamp(72px, 18vh, 110px);
+    height:clamp(92px, 23vh, 140px);
+  }
+  .theme-title   { font-size:clamp(1.4rem, 5vh, 1.8rem) }
+  #btn-screen    { gap:clamp(14px, 3vh, 24px) }
+  #heart-btn     { width:clamp(56px, 12vh, 72px); height:clamp(56px, 12vh, 72px) }
+  .tagline       { font-size:clamp(1.4rem, 5vh, 2rem) }
+}
+
+/* ── Very narrow phones (≤ 360px): keep cards readable ──────────── */
+@media (max-width: 360px) {
+  .theme-options { gap:10px }
+  .theme-card    { padding:8px }
+  .theme-preview { width:88px; height:114px }
+  .theme-label   { font-size:.78rem; letter-spacing:0 }
+}
+</style>
+</head>
+<body>
+
+<div id="bg"></div>
+<div id="decor"></div>
+<canvas id="particles"></canvas>
+
+<!-- ── Theme selection ──────────────────────────────────────────── -->
+<div id="theme-screen">
+  <p class="theme-title">Выбери тему</p>
+  <div class="theme-options">
+
+    <button class="theme-card" data-theme="light">
+      <div class="theme-preview preview-light">
+        <svg viewBox="0 0 100 92" width="52" height="48" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hgl" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#ff6b9d"/>
+              <stop offset="100%" stop-color="#ff4757"/>
+            </linearGradient>
+          </defs>
+          <path d="M50 84 C 38 75,8 58,8 32 C 8 17,19 7,32 7 C 40 7,46 11,50 18 C 54 11,60 7,68 7 C 81 7,92 17,92 32 C 92 58,62 75,50 84 Z" fill="url(#hgl)"/>
+        </svg>
+      </div>
+      <span class="theme-label">Светлая</span>
+    </button>
+
+    <button class="theme-card" data-theme="dark">
+      <div class="theme-preview preview-dark">
+        <svg viewBox="0 0 100 92" width="52" height="48" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="hgd" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"   stop-color="#ff6b9d"/>
+              <stop offset="100%" stop-color="#ff4757"/>
+            </linearGradient>
+          </defs>
+          <path d="M50 84 C 38 75,8 58,8 32 C 8 17,19 7,32 7 C 40 7,46 11,50 18 C 54 11,60 7,68 7 C 81 7,92 17,92 32 C 92 58,62 75,50 84 Z" fill="url(#hgd)"/>
+        </svg>
+      </div>
+      <span class="theme-label">Тёмная</span>
+    </button>
+
+  </div>
+</div>
+
+<!-- ── Start screen ─────────────────────────────────────────────── -->
+<div id="btn-screen">
+  <p class="tagline">Для тебя <span class="hrt">❤</span></p>
+  <button id="heart-btn" aria-label="Открыть">
+    <svg viewBox="0 0 100 92" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stop-color="#ff6b9d"/>
+          <stop offset="100%" stop-color="#ff4757"/>
+        </linearGradient>
+      </defs>
+      <path d="M50 84
+               C 38 75, 8 58, 8 32
+               C 8 17, 19 7, 32 7
+               C 40 7, 46 11, 50 18
+               C 54 11, 60 7, 68 7
+               C 81 7, 92 17, 92 32
+               C 92 58, 62 75, 50 84 Z"
+            fill="url(#hg)"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ── Heart scene ──────────────────────────────────────────────── -->
+<div id="heart-screen">
+  <div id="ghost-hearts"></div>
+  <div id="heart-container"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+const COLORS = [
+  '#FF6B6B','#FF4757','#FF1493','#DC143C',
+  '#E91E63','#FF69B4','#C0392B','#FF85A1',
+  '#F06292','#AD1457','#FF4081','#D81B60',
+  '#FF80AB','#F48FB1','#E8607A','#FF6EB4'
+];
+
+const btnScreen   = document.getElementById('btn-screen');
+const heartScreen = document.getElementById('heart-screen');
+const heartCont   = document.getElementById('heart-container');
+const pCanvas     = document.getElementById('particles');
+const pCtx        = pCanvas.getContext('2d');
+const bg          = document.getElementById('bg');
+const decor       = document.getElementById('decor');
+const rand        = Math.random.bind(Math);
+const pick        = a => a[a.length * rand() | 0];
+
+/* ── Theme selection ──────────────────────────────────────────── */
+function initTheme() {
+  const screen = document.getElementById('theme-screen');
+
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      const isDark = card.dataset.theme === 'dark';
+      if (isDark) document.body.classList.add('dark');
+
+      // Slight pause so "selected" highlight is visible before transition
+      setTimeout(() => {
+        screen.classList.add('fade-out');
+        initDecor(isDark);
+
+        setTimeout(() => {
+          screen.style.display = 'none';
+          btnScreen.classList.add('visible');
+        }, 700);
+      }, 180);
+    });
+  });
+}
+
+/* ── Decor: bokeh blobs + floating hearts ─────────────────────── */
+function initDecor(isDark) {
+  const HEART_PATH = 'M50 84 C 38 75,8 58,8 32 C 8 17,19 7,32 7 C 40 7,46 11,50 18 C 54 11,60 7,68 7 C 81 7,92 17,92 32 C 92 58,62 75,50 84 Z';
+  const FH_COLORS  = ['#ff6b9d','#ff4757','#ffaac8','#ff85a1','#ffc0d0','#e91e63','#ff9ab8','#ff7eb3'];
+
+  const BOKEH_LIGHT = [
+    'rgba(255,160,190,0.32)','rgba(255,200,160,0.28)',
+    'rgba(255,130,170,0.25)','rgba(255,220,190,0.30)',
+    'rgba(255,170,200,0.22)','rgba(255,210,170,0.26)',
+    'rgba(255,145,180,0.20)',
+  ];
+  const BOKEH_DARK = [
+    'rgba(180, 60,220,0.30)','rgba(120, 30,180,0.26)',
+    'rgba(220, 80,160,0.28)','rgba(100, 20,200,0.22)',
+    'rgba(200, 50,180,0.24)','rgba(140, 40,210,0.20)',
+    'rgba(255, 80,160,0.18)',
+  ];
+  const bokehColors = isDark ? BOKEH_DARK : BOKEH_LIGHT;
+  const bokehSizes  = [180, 220, 150, 260, 130, 200, 240];
+
+  bokehColors.forEach((c, i) => {
+    const el  = document.createElement('div');
+    el.className = 'bokeh';
+    const s   = bokehSizes[i];
+    const dur = 14 + rand() * 12;
+    el.style.width  = s + 'px';
+    el.style.height = s + 'px';
+    el.style.left   = (rand() * 92) + '%';
+    el.style.top    = (rand() * 88) + '%';
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay   = (-rand() * dur) + 's';
+    el.style.setProperty('--bc',   c);
+    el.style.setProperty('--b-op', (0.55 + rand() * 0.45).toFixed(2));
+    el.style.setProperty('--b-dx', ((rand() - .5) * 70) + 'px');
+    el.style.setProperty('--b-dy', ((rand() - .5) * 50) + 'px');
+    decor.appendChild(el);
+  });
+
+  for (let i = 0; i < 18; i++) {
+    const fh   = document.createElement('div');
+    fh.className = 'fh';
+    const size = 9 + rand() * 22;
+    const dur  = 11 + rand() * 14;
+    const col  = FH_COLORS[i % FH_COLORS.length];
+    fh.style.left             = (rand() * 100) + '%';
+    fh.style.width            = size + 'px';
+    fh.style.height           = size + 'px';
+    fh.style.animationDuration = dur + 's';
+    fh.style.animationDelay   = (-rand() * dur) + 's';
+    fh.style.setProperty('--fh-op',    (0.14 + rand() * 0.28).toFixed(2));
+    fh.style.setProperty('--fh-drift', ((rand() - .5) * 90) + 'px');
+    fh.innerHTML = `<svg viewBox="0 0 100 92" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"><path d="${HEART_PATH}" fill="${col}"/></svg>`;
+    decor.appendChild(fh);
+  }
+}
+
+/* ── Heart point generation ───────────────────────────────────── */
+function getHeartPoints(size, step) {
+  const oc  = document.createElement('canvas');
+  oc.width  = oc.height = size;
+  const ctx = oc.getContext('2d');
+  const sc  = size / 38;
+  const cx  = size / 2;
+  const cy  = size / 2 - 2.5 * sc;
+
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  for (let t = 0; t <= 2 * Math.PI + 0.01; t += 0.004) {
+    const px = cx + 16 * Math.pow(Math.sin(t), 3) * sc;
+    const py = cy - (13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t)) * sc;
+    t < 0.001 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fill();
+
+  const { data } = ctx.getImageData(0, 0, size, size);
+  const pts = [];
+  for (let y = step * 0.5; y < size; y += step) {
+    for (let x = step * 0.5; x < size; x += step) {
+      const idx = (Math.floor(y) * size + Math.floor(x)) * 4;
+      if (data[idx + 3] > 128) pts.push({ x: x - size/2, y: y - size/2 });
+    }
+  }
+  return pts;
+}
+
+/* ── Build heart DOM ──────────────────────────────────────────── */
+function buildHeart() {
+  const vmin = Math.min(window.innerWidth, window.innerHeight);
+  const size = Math.min(Math.floor(vmin * 0.9), 640);
+  const step = Math.max(16, Math.floor(size / 36));
+  const fs   = Math.max(10, Math.floor(size / 48));
+  const half = size / 2;
+
+  heartCont.style.width  = size + 'px';
+  heartCont.style.height = size + 'px';
+  heartCont.innerHTML    = '';
+
+  getHeartPoints(size, step).forEach(({ x, y }) => {
+    const el  = document.createElement('span');
+    el.className   = 'word';
+    el.textContent = 'I love you';
+    el.dataset.fx  = half + x;
+    el.dataset.fy  = half + y;
+
+    const op  = (0.68 + rand() * 0.27).toFixed(3);
+    const rot = ((rand() - 0.5) * 22).toFixed(1);
+
+    el.style.left      = half + 'px';
+    el.style.top       = half + 'px';
+    el.style.fontSize  = fs + 'px';
+    el.style.color     = pick(COLORS);
+    el.style.transform = `translate(-50%,-50%) scale(0) rotate(${rot}deg)`;
+    el.style.setProperty('--op',  op);
+    el.style.setProperty('--rot', rot + 'deg');
+    heartCont.appendChild(el);
+  });
+
+  return size;
+}
+
+/* ── Ghost hearts (background layer) ─────────────────────────── */
+function buildGhostHearts(isDark) {
+  const gc   = document.getElementById('ghost-hearts');
+  const vmin = Math.min(window.innerWidth, window.innerHeight);
+  const PATH = 'M50 84 C 38 75,8 58,8 32 C 8 17,19 7,32 7 C 40 7,46 11,50 18 C 54 11,60 7,68 7 C 81 7,92 17,92 32 C 92 58,62 75,50 84 Z';
+
+  // Each entry: [sizeK, offsetX%, offsetY%, rotateDeg, opMin, opMax, durSec]
+  const CFG = [
+    [ 1.55,  0,      0,     2,   isDark?.015:.010,  isDark?.04:.025,  12 ],
+    [ 0.80, -0.14,  -0.10, -14,  isDark?.030:.020,  isDark?.07:.045,   8 ],
+    [ 1.10,  0.12,   0.08,  10,  isDark?.020:.012,  isDark?.055:.032, 10 ],
+    [ 0.55,  0.20,  -0.18,  28,  isDark?.035:.025,  isDark?.08:.055,   6 ],
+    [ 0.65, -0.18,   0.20, -22,  isDark?.025:.018,  isDark?.06:.040,   9 ],
+    [ 2.00,  0,      0,    -3,   isDark?.008:.005,  isDark?.02:.012,  16 ],
+  ];
+
+  CFG.forEach(([sk, oxk, oyk, rot, oMin, oMax, dur]) => {
+    const el   = document.createElement('div');
+    el.className = 'ghost-heart';
+    const sz   = sk * vmin;
+    const cx   = window.innerWidth  / 2;
+    const cy   = window.innerHeight / 2;
+    const delay = -(rand() * dur);
+
+    el.style.width  = sz + 'px';
+    el.style.height = sz + 'px';
+    el.style.left   = (cx + oxk * vmin - sz / 2) + 'px';
+    el.style.top    = (cy + oyk * vmin - sz / 2) + 'px';
+    el.style.transform = `rotate(${rot}deg)`;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay   = delay + 's';
+    el.style.setProperty('--go-min', oMin);
+    el.style.setProperty('--go-max', oMax);
+
+    const color = pick(['#e91e63','#c2185b','#ff4081','#ff6b9d','#ad1457']);
+    el.innerHTML = `<svg viewBox="0 0 100 92" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"><path d="${PATH}" fill="${color}"/></svg>`;
+    gc.appendChild(el);
+  });
+}
+
+/* ── Animate words ────────────────────────────────────────────── */
+function animateHeart(size) {
+  const words = Array.from(heartCont.querySelectorAll('.word'));
+  const half  = size / 2;
+  const maxD  = half * Math.SQRT2;
+
+  words.forEach(word => {
+    const fx   = parseFloat(word.dataset.fx);
+    const fy   = parseFloat(word.dataset.fy);
+    const rot  = word.style.getPropertyValue('--rot') || '0deg';
+    const dist = Math.hypot(fx - half, fy - half);
+    const op   = word.style.getPropertyValue('--op') || '0.82';
+
+    const delay  = 220 + (dist / maxD) * 880 + rand() * 240;
+    const flyDur = 440 + rand() * 260;
+
+    setTimeout(() => {
+      const ease = 'cubic-bezier(.34,1.5,.64,1)';
+      word.style.transition = [
+        `left ${flyDur}ms ${ease}`,
+        `top ${flyDur}ms ${ease}`,
+        `opacity 260ms ease`,
+        `transform ${flyDur}ms ${ease}`
+      ].join(',');
+      word.style.left      = fx + 'px';
+      word.style.top       = fy + 'px';
+      word.style.opacity   = op;
+      word.style.transform = `translate(-50%,-50%) scale(1) rotate(${rot})`;
+
+      setTimeout(() => {
+        word.style.transition = '';
+        const dur   = (4 + rand()).toFixed(1);
+        const phase = (rand() * 4).toFixed(2);
+        word.style.animation  = `breathe ${dur}s -${phase}s ease-in-out infinite`;
+      }, flyDur + 80);
+
+    }, delay);
+  });
+}
+
+/* ── Particles ────────────────────────────────────────────────── */
+let running = false, parts = [];
+
+function resizeCanvas() {
+  pCanvas.width  = window.innerWidth;
+  pCanvas.height = window.innerHeight;
+}
+
+function spawnParticle() {
+  const spread = Math.min(innerWidth, innerHeight) * 0.44;
+  return {
+    x:  innerWidth/2  + (rand() - .5) * spread * 2,
+    y:  innerHeight/2 + (rand() - .5) * spread * 1.7,
+    vx: (rand() - .5) * .7,
+    vy: -(0.4 + rand() * 1.2),
+    r:  1.2 + rand() * 2.3,
+    col: pick(COLORS),
+    life: 1,
+    decay: 0.003 + rand() * 0.008
+  };
+}
+
+function tickParticles() {
+  if (!running) return;
+  if (rand() < .35) parts.push(spawnParticle());
+  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+  parts = parts.filter(p => {
+    p.x += p.vx; p.y += p.vy; p.life -= p.decay;
+    if (p.life <= 0) return false;
+    pCtx.globalAlpha = p.life * .72;
+    pCtx.fillStyle   = p.col;
+    pCtx.beginPath();
+    pCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    pCtx.fill();
+    return true;
+  });
+  pCtx.globalAlpha = 1;
+  requestAnimationFrame(tickParticles);
+}
+
+/* ── Soft click sound ─────────────────────────────────────────── */
+function playSound() {
+  try {
+    const AC  = window.AudioContext || window.webkitAudioContext;
+    const ac  = new AC();
+    const osc = ac.createOscillator();
+    const g   = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(523.25, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(783.99, ac.currentTime + .15);
+    g.gain.setValueAtTime(0, ac.currentTime);
+    g.gain.linearRampToValueAtTime(.08, ac.currentTime + .04);
+    g.gain.exponentialRampToValueAtTime(1e-4, ac.currentTime + .7);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + .7);
+  } catch(_) {}
+}
+
+/* ── Entry point ──────────────────────────────────────────────── */
+initTheme();
+
+document.getElementById('heart-btn').addEventListener('click', () => {
+  playSound();
+  bg.classList.add('fade-out');
+  decor.classList.add('fade-out');
+  btnScreen.classList.add('fade-out');
+
+  const isDark = document.body.classList.contains('dark');
+  const size = buildHeart();
+  buildGhostHearts(isDark);
+
+  setTimeout(() => {
+    heartScreen.classList.add('visible');
+    pCanvas.classList.add('visible');
+    resizeCanvas();
+    running = true;
+    tickParticles();
+    animateHeart(size);
+  }, 500);
+
+  setTimeout(() => { btnScreen.style.display = 'none'; }, 1500);
+});
+
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+})();
+</script>
+</body>
+</html>
